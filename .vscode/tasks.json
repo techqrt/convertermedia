@@ -1,0 +1,47 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Create Django Project",
+			"type": "shell",
+			"command": "django-admin startproject media_converter .",
+			"args": [],
+			"group": "build"
+		},
+		{
+			"label": "Create Django Application",
+			"type": "shell",
+			"command": "python manage.py startapp converter",
+			"args": [],
+			"group": "build"
+		},
+		{
+			"label": "Create Django Application",
+			"type": "shell",
+			"command": "/usr/local/bin/python3 manage.py startapp converter",
+			"args": [],
+			"group": "build"
+		},
+		{
+			"label": "Install Required Packages",
+			"type": "shell",
+			"command": "pip install Pillow python-docx pdf2image",
+			"args": [],
+			"group": "build"
+		},
+		{
+			"label": "Create Django Application",
+			"type": "shell",
+			"command": "/usr/local/bin/python3 manage.py startapp converter",
+			"args": [],
+			"group": "build"
+		},
+		{
+			"label": "Create Django Application",
+			"type": "shell",
+			"command": "/usr/local/bin/python3 manage.py startapp converter",
+			"args": [],
+			"group": "build"
+		}
+	]
+}

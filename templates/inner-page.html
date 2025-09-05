@@ -1,0 +1,62 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ meta.title }} | ConverterMedia</title>
+    <meta name="description" content="{{ meta.subtitle }}">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+    <link rel="stylesheet" href="{% static 'css/web.css' %}">
+</head>
+<body>
+<header class="header">
+    <nav>
+        <a class="brand" href="/" title="ConverterMedia">
+            <img src="{% static 'img/cue7ven.png' %}" alt="ConverterMedia">
+        </a>
+    </nav>
+</header>
+
+<div class="main">
+    <div class="tool">
+        <div class="tool__workarea" id="workArea">
+            <div id="dropArea"></div>
+            <div class="tool__header">
+                <h1 class="tool__header__title">{{ meta.title }}</h1>
+                <h2 class="tool__header__subtitle">{{ meta.subtitle }}</h2>
+            </div>
+
+            <div class="uploader">
+                <form action="{% url 'convert' operation %}" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <label class="uploader__btn tooltip--left">
+                        <input type="file" name="file" accept="{{ meta.accept }}" required hidden>
+                        <span>{{ meta.button }}</span>
+                    </label>
+
+                    {% if operation == "resize_image" %}
+                        <div class="resize-inputs">
+                            <label>
+                                Width:
+                                <input type="number" name="width" min="1" required>
+                            </label>
+                            <label>
+                                Height:
+                                <input type="number" name="height" min="1" required>
+                            </label>
+                        </div>
+                    {% endif %}
+
+                    <button type="submit" class="btn">Convert</button>
+                </form>
+                <div class="uploader__droptxt">or drop file here</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
