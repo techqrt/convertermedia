@@ -6,6 +6,7 @@ from PIL import Image
 from pdf2image import convert_from_path
 from pdf2docx import Converter
 from django.utils.text import get_valid_filename
+from django.core.files.storage import FileSystemStorage
 
 
 # Centralized metadata for all operations
@@ -100,12 +101,10 @@ def convert(request, operation):
 
     uploaded_file = request.FILES["file"]
     safe_filename = get_valid_filename(uploaded_file.name)
-    input_path = os.path.join(settings.MEDIA_ROOT, safe_filename)
 
-    # Save uploaded file
-    with open(input_path, "wb+") as f:
-        for chunk in uploaded_file.chunks():
-            f.write(chunk)
+    fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+    input_path = fs.save(safe_filename, uploaded_file)
+    input_path = fs.path(input_path)
 
     output_path = os.path.join(settings.MEDIA_ROOT, f"converted_{safe_filename}")
 
