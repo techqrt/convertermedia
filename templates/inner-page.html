@@ -7,56 +7,145 @@
     <title>{{ meta.title }} | ConverterMedia</title>
     <meta name="description" content="{{ meta.subtitle }}">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <link rel="stylesheet" href="{% static 'css/app.css' %}">
-    <link rel="stylesheet" href="{% static 'css/web.css' %}">
+
+    <style>
+        /* Reset / Base */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+          font-family: "Inter", Arial, sans-serif;
+          background: #f9fafc;
+          color: #333;
+          line-height: 1.6;
+          display: flex;
+          flex-direction: column;
+          min-height: 100vh;
+        }
+        .header { background: #295795; padding: 1rem 2rem; }
+        .nav .brand img { height: 40px; display: block; }
+        .main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+        .tool {
+          width: 100%; max-width: 600px; background: #fff; border-radius: 12px;
+          box-shadow: 0 6px 20px rgba(0,0,0,0.08); padding: 2rem; transition: transform 0.2s ease;
+        }
+        .tool:hover { transform: translateY(-3px); }
+        .tool__header { text-align: center; margin-bottom: 2rem; }
+        .tool__header__title { font-size: 1.8rem; font-weight: 600; color: #295795; }
+        .tool__header__subtitle { font-size: 1rem; color: #666; margin-top: 0.5rem; }
+        .uploader {
+          border: 2px dashed #5f83c6; border-radius: 10px; padding: 2rem; text-align: center;
+          transition: background 0.3s ease, border-color 0.3s ease;
+        }
+        .uploader:hover { background: #f0f6ff; border-color: #295795; }
+        .uploader__btn {
+          display: inline-block; background: #295795; color: #fff; padding: 0.75rem 1.5rem;
+          border-radius: 6px; cursor: pointer; font-weight: 500; transition: background 0.3s ease;
+        }
+        .uploader__btn:hover { background: #1e416f; }
+        .resize-inputs {
+          display: flex; justify-content: center; gap: 1rem; margin: 1.5rem 0;
+        }
+        .resize-inputs label { display: flex; flex-direction: column; font-size: 0.9rem; color: #333; }
+        .resize-inputs input {
+          margin-top: 0.3rem; padding: 0.5rem; border: 1px solid #ccc;
+          border-radius: 6px; width: 100px;
+        }
+        .btn {
+          display: inline-block; background: #5f83c6; color: #fff;
+          padding: 0.75rem 1.5rem; border: none; border-radius: 6px;
+          cursor: pointer; font-weight: 600; transition: background 0.3s ease;
+        }
+        .btn:hover { background: #4668a0; }
+        .uploader__droptxt { margin-top: 1rem; font-size: 0.9rem; color: #777; }
+        /* File Preview */
+        .file-preview {
+          margin-top: 1rem; text-align: center;
+        }
+        .file-preview img {
+          max-width: 100px; max-height: 100px; border-radius: 6px; margin-top: 0.5rem;
+        }
+        .file-preview span {
+          display: block; margin-top: 0.5rem; font-size: 0.9rem; color: #333;
+        }
+        @media (max-width: 600px) {
+          .tool { padding: 1.5rem; }
+          .resize-inputs { flex-direction: column; align-items: center; }
+          .resize-inputs input { width: 100%; }
+        }
+    </style>
 </head>
 <body>
 <header class="header">
-    <nav>
+    <nav class="nav">
         <a class="brand" href="/" title="ConverterMedia">
             <img src="{% static 'img/cue7ven.png' %}" alt="ConverterMedia">
         </a>
     </nav>
 </header>
 
-<div class="main">
-    <div class="tool">
+<main class="main">
+    <section class="tool">
         <div class="tool__workarea" id="workArea">
-            <div id="dropArea"></div>
-            <div class="tool__header">
+            
+            <header class="tool__header">
                 <h1 class="tool__header__title">{{ meta.title }}</h1>
                 <h2 class="tool__header__subtitle">{{ meta.subtitle }}</h2>
-            </div>
+            </header>
 
-            <div class="uploader">
-                <form action="{% url 'convert' operation %}" method="post" enctype="multipart/form-data">
+            <div class="uploader" id="dropArea">
+                <form action="{% url 'convert' operation %}" method="post" enctype="multipart/form-data" class="uploader__form">
                     {% csrf_token %}
                     
                     <label class="uploader__btn tooltip--left">
-                        <input type="file" name="file" accept="{{ meta.accept }}" required hidden>
+                        <input type="file" name="file" id="fileInput" accept="{{ meta.accept }}" required hidden>
                         <span>{{ meta.button }}</span>
                     </label>
 
                     {% if operation == "resize_image" %}
                         <div class="resize-inputs">
                             <label>
-                                Width:
+                                Width
                                 <input type="number" name="width" min="1" required>
                             </label>
                             <label>
-                                Height:
+                                Height
                                 <input type="number" name="height" min="1" required>
                             </label>
                         </div>
                     {% endif %}
 
+                    <div class="file-preview" id="filePreview"></div>
+
                     <button type="submit" class="btn">Convert</button>
                 </form>
-                <div class="uploader__droptxt">or drop file here</div>
+                <p class="uploader__droptxt">or drop file here</p>
             </div>
         </div>
-    </div>
-</div>
+    </section>
+</main>
+
+<script>
+    const fileInput = document.getElementById("fileInput");
+    const filePreview = document.getElementById("filePreview");
+
+    fileInput.addEventListener("change", () => {
+        filePreview.innerHTML = "";
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        // Show file name
+        const fileName = document.createElement("span");
+        fileName.textContent = file.name;
+        filePreview.appendChild(fileName);
+
+        // If it's an image, show thumbnail
+        if (file.type.startsWith("image/")) {
+            const img = document.createElement("img");
+            img.src = URL.createObjectURL(file);
+            img.onload = () => URL.revokeObjectURL(img.src);
+            filePreview.appendChild(img);
+        }
+    });
+</script>
 
 </body>
 </html>
