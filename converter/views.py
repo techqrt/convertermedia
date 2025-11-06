@@ -7,6 +7,8 @@ from pdf2image import convert_from_path
 from pdf2docx import Converter
 from django.utils.text import get_valid_filename
 from django.core.files.storage import FileSystemStorage
+import zipfile
+from .utils import pdf_to_images, pdf_to_word, image_convert
 
 
 # Centralized metadata for all operations
@@ -112,9 +114,20 @@ def convert(request, operation):
     # ----- Conversion Logic -----
     try:
         if operation == "pdf_to_image":
-            images = convert_from_path(input_path)
-            output_path = output_path.replace(".pdf", ".jpg")
-            images[0].save(output_path, "JPEG")
+            image_paths = pdf_to_images(input_path, output_format="PNG")
+
+            # If only one page, return single file
+            if len(image_paths) == 1:
+                return FileResponse(open(image_paths[0], "rb"), as_attachment=True)
+
+            # Otherwise, create a ZIP of all images
+            zip_buffer = BytesIO()
+            with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zipf:
+                for img_path in image_paths:
+                    zipf.write(img_path, os.path.basename(img_path))
+            zip_buffer.seek(0)
+
+            return FileResponse(zip_buffer, as_attachment=True, filename="converted_images.zip")
 
         elif operation == "pdf_to_word":
             output_path = output_path.replace(".pdf", ".docx")
@@ -139,15 +152,31 @@ def convert(request, operation):
 
             elif operation == "image_to_wbmp":
                 output_path = os.path.splitext(output_path)[0] + ".wbmp"
-                img.save(output_path, "WBMP")
+                img = img.convert("1")  # Convert to black & white (1-bit)
+                img.save(output_path, "PNG")  # Save as PNG but rename extension
+                # Optional: rename to .wbmp for consistency
+                os.rename(output_path, output_path)
 
             elif operation == "image_to_ico":
                 output_path = os.path.splitext(output_path)[0] + ".ico"
                 img.save(output_path, "ICO")
 
             elif operation == "image_to_svg":
-                # PIL does not support SVG export → placeholder
-                return HttpResponseBadRequest("SVG export not supported natively.")
+                import base64
+                from io import BytesIO
+
+                buffered = BytesIO()
+                img.save(buffered, format="PNG")
+                img_base64 = base64.b64encode(buffered.getvalue()).decode()
+
+                width, height = img.size
+                output_path = os.path.splitext(output_path)[0] + ".svg"
+                svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}">
+                                <image href="data:image/png;base64,{img_base64}" width="{width}" height="{height}" />
+                            </svg>'''
+
+                with open(output_path, "w", encoding="utf-8") as svg_file:
+                    svg_file.write(svg_content)
 
             elif operation == "resize_image":
                 try:

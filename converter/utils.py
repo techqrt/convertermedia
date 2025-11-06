@@ -1,10 +1,11 @@
 import os
+import fitz 
 import tempfile
 from pathlib import Path
 from PIL import Image
 from pdf2image import convert_from_path
 from pdf2docx import Converter
-
+from media_converter import settings
 
 # ===========================
 # PDF → Images
@@ -15,12 +16,20 @@ def pdf_to_images(pdf_file, output_format="PNG"):
     Returns: list of image paths
     """
     output_files = []
-    with tempfile.TemporaryDirectory() as tempdir:
-        images = convert_from_path(pdf_file, dpi=200, fmt=output_format.lower(), output_folder=tempdir)
-        for i, img in enumerate(images):
-            out_path = Path(tempdir) / f"page_{i+1}.{output_format.lower()}"
-            img.save(out_path, output_format.upper())
-            output_files.append(str(out_path))
+
+    # Ensure persistent directory exists
+    output_dir = Path(settings.MEDIA_ROOT) / "pdf_images"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    pdf = fitz.open(pdf_file)
+    base_name = Path(pdf_file).stem
+
+    for i, page in enumerate(pdf):
+        pix = page.get_pixmap(dpi=200)
+        out_path = output_dir / f"{base_name}_page_{i+1}.{output_format.lower()}"
+        pix.save(str(out_path))
+        output_files.append(str(out_path))
+
     return output_files
 
 
