@@ -10,7 +10,6 @@ from django.core.files.storage import FileSystemStorage
 import zipfile
 from .utils import pdf_to_images, pdf_to_word, image_convert
 
-
 # Centralized metadata for all operations
 OPERATIONS_META = {
     "pdf_to_image": {
@@ -102,6 +101,11 @@ def convert(request, operation):
         return HttpResponseBadRequest("No file uploaded.")
 
     uploaded_file = request.FILES["file"]
+
+    MAX_UPLOAD_SIZE = 20 * 1024 * 1024  # 20 MB
+    if uploaded_file.size > MAX_UPLOAD_SIZE:
+        return HttpResponseBadRequest("File too large. Maximum allowed size is 20 MB.")
+
     safe_filename = get_valid_filename(uploaded_file.name)
 
     fs = FileSystemStorage(location=settings.MEDIA_ROOT)

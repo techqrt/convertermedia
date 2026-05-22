@@ -132,6 +132,13 @@
         const file = fileInput.files[0];
         if (!file) return;
 
+        const MAX_SIZE = 20 * 1024 * 1024; // 20 MB
+        if (file.size > MAX_SIZE) {
+            alert("File is too large. Maximum allowed size is 20 MB.");
+            fileInput.value = "";
+            return;
+        }
+
         // Show file name
         const fileName = document.createElement("span");
         fileName.textContent = file.name;
